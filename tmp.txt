@@ -1,0 +1,80 @@
+			GL11.glColor4f(r, g, b, alpha);
+			RenderUtils.drawSelectionBoundingBox(new AxisAlignedBB(startX, startY, startZ, startX + size, startY + size, startZ + size));
+			break;
+
+		case 2: // Filled
+			GL11.glDisable(GL11.GL_TEXTURE_2D);
+			GL11.glColor4f(r, g, b, (float) fillOpacity.getValue());
+			RenderUtils.drawColorBox(new AxisAlignedBB(startX, startY, startZ, startX + size, startY + size, startZ + size), 0F, 0F, 0F, 0F);
+			break;
+
+		case 3: // Corners
+			GL11.glDisable(GL11.GL_TEXTURE_2D);
+			GL11.glColor4f(r, g, b, alpha);
+			double corner = size * 0.25;
+			GL11.glBegin(GL11.GL_LINES);
+			GL11.glVertex3d(startX, startY + size, startZ); GL11.glVertex3d(startX + corner, startY + size, startZ);
+			GL11.glVertex3d(startX + size - corner, startY + size, startZ); GL11.glVertex3d(startX + size, startY + size, startZ);
+			GL11.glVertex3d(startX, startY + size, startZ + size); GL11.glVertex3d(startX + corner, startY + size, startZ + size);
+			GL11.glVertex3d(startX + size - corner, startY + size, startZ + size); GL11.glVertex3d(startX + size, startY + size, startZ + size);
+			GL11.glVertex3d(startX, startY + size, startZ); GL11.glVertex3d(startX, startY + size, startZ + corner);
+			GL11.glVertex3d(startX, startY + size, startZ + size - corner); GL11.glVertex3d(startX, startY + size, startZ + size);
+			GL11.glVertex3d(startX + size, startY + size, startZ); GL11.glVertex3d(startX + size, startY + size, startZ + corner);
+			GL11.glVertex3d(startX + size, startY + size, startZ + size - corner); GL11.glVertex3d(startX + size, startY + size, startZ + size);
+			GL11.glVertex3d(startX, startY, startZ); GL11.glVertex3d(startX + corner, startY, startZ);
+			GL11.glVertex3d(startX + size - corner, startY, startZ); GL11.glVertex3d(startX + size, startY, startZ);
+			GL11.glVertex3d(startX, startY, startZ + size); GL11.glVertex3d(startX + corner, startY, startZ + size);
+			GL11.glVertex3d(startX + size - corner, startY, startZ + size); GL11.glVertex3d(startX + size, startY, startZ + size);
+			GL11.glVertex3d(startX, startY, startZ); GL11.glVertex3d(startX, startY + size, startZ);
+			GL11.glVertex3d(startX + size, startY, startZ); GL11.glVertex3d(startX + size, startY + size, startZ);
+			GL11.glVertex3d(startX, startY, startZ + size); GL11.glVertex3d(startX, startY + size, startZ + size);
+			GL11.glVertex3d(startX + size, startY, startZ + size); GL11.glVertex3d(startX + size, startY + size, startZ + size);
+			GL11.glEnd();
+			break;
+		}
+
+		GL11.glEnable(GL11.GL_TEXTURE_2D);
+		if (!renderThroughWalls.getValue()) {
+			GL11.glEnable(GL11.GL_DEPTH_TEST);
+		}
+		GL11.glDisable(GL11.GL_BLEND);
+		GL11.glPopMatrix();
+	}
+
+	private void renderLabel(BlockPos pos, String label, double dist, int itemCount) {
+		if (!showNames.getValue() && !showDistance.getValue() && !showItemCount.getValue()) return;
+
+		double px = pos.getX() + 0.5 - Minecraft.getMinecraft().getRenderManager().renderPosX;
+		double py = pos.getY() + 0.5 - Minecraft.getMinecraft().getRenderManager().renderPosY;
+		double pz = pos.getZ() + 0.5 - Minecraft.getMinecraft().getRenderManager().renderPosZ;
+
+		double boxTop = py + 0.5 + (1.0 - boxScale.getValue()) / 2.0;
+		float scale = (float) (textScale.getValue() * 2.0);
+
+		GL11.glPushMatrix();
+		GL11.glTranslated(px, boxTop + 0.5, pz);
+		GL11.glScalef(scale, scale, scale);
+		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		GL11.glNormal3f(0.0F, 1.0F, 0.0F);
+		GL11.glRotatef(-Minecraft.getMinecraft().getRenderManager().playerViewY, 0.0F, 1.0F, 0.0F);
+		GL11.glRotatef(Minecraft.getMinecraft().getRenderManager().playerViewX, 1.0F, 0.0F, 0.0F);
+
+		StringBuilder sb = new StringBuilder();
+		if (showNames.getValue()) sb.append(label);
+		if (showDistance.getValue()) {
+			int meters = (int) Math.round(dist);
+			if (sb.length() > 0) sb.append(" ");
+			sb.append(meters).append("m");
+		}
+		if (showItemCount.getValue() && itemCount > 0) {
+			if (sb.length() > 0) sb.append(" ");
+			sb.append("(").append(itemCount).append(")");
+		}
+
+		if (sb.length() > 0) {
+			String text = sb.toString();
+			int color = (255 << 24) | (0xFFFFFF & 0xFFFFFF);
+			Minecraft.getMinecraft().fontRendererObj.drawStringWithShadow(text,
+					-Minecraft.getMinecraft().fontRendererObj.getStringWidth(text) / 2, 0, color);
+		}
+
